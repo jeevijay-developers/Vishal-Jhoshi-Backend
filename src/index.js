@@ -24,7 +24,7 @@ const AdminNotifications = require("./models/AdminNotifications");
 const app = express();
 
 const allowedOrigins = [
-  "vishal-jhoshi.vercel.app", // Production
+  "https://vishal-jhoshi.vercel.app", // Production
   "http://localhost:3002", // Development
 ];
 
