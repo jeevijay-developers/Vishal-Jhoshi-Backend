@@ -192,9 +192,11 @@ exports.rescheduleTest = async (req, res) => {
     const newTest = new LiveTest({
       ...originalTest.toObject(), // Clone all fields from the original test
       date: testDate, // Update the date
+      _id: undefined,
       time: testTime, // Update the time
       timestamp, // Update the timestamp
     });
+    console.log(newTest);
 
     // Save the new test object to the database
     const savedTest = await newTest.save();
