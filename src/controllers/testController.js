@@ -191,7 +191,6 @@ exports.rescheduleTest = async (req, res) => {
     // Create a new test object by cloning the original and updating fields
     const newTest = new LiveTest({
       ...originalTest.toObject(), // Clone all fields from the original test
-      _id: undefined, // Remove the `_id` field to allow MongoDB to generate a new one
       date: testDate, // Update the date
       time: testTime, // Update the time
       timestamp, // Update the timestamp
