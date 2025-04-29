@@ -24,8 +24,8 @@ const AdminNotifications = require("./models/AdminNotifications");
 const app = express();
 
 const allowedOrigins = [
-  "https://vishal-joshi-sir-classes-fontend.vercel.app", // Production
-  "http://localhost:3000", // Development
+  "vishal-jhoshi.vercel.app", // Production
+  "http://localhost:3002", // Development
 ];
 
 const corsOptions = {
