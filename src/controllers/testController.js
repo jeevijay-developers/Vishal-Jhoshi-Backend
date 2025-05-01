@@ -116,27 +116,6 @@ exports.saveSelectQuestions = async (req, res) => {
       }
     });
 
-    // Log or save the data to a database
-    // console.log({
-    //   subject,
-    //   topic,
-    //   subtopic,
-    //   level,
-    //   type,
-    //   description,
-    //   descriptionImage: savedDescriptionImage,
-    //   optionType,
-    //   textOptions: {
-    //     A: textOptionsA,
-    //     B: textOptionsB,
-    //     C: textOptionsC,
-    //     D: textOptionsD,
-    //   },
-    //   imageOptions: savedImageOptions,
-    //   correctAnswer,
-    // });
-
-    // Return success response
     res.status(200).json({
       message: "Question uploaded successfully",
       savedDescriptionImage,

@@ -1,10 +1,5 @@
 const mongoose = require("mongoose");
 
-// const ImageOptionSchema = new mongoose.Schema({
-//   text: { type: String, required: false }, // Option text
-//   image: { type: String, required: false }, // Optional image URL
-// });
-
 const SelectTestQuestionSchema = new mongoose.Schema({
   subject: { type: String, default: "" }, // e.g., "Physics"
   topic: { type: String, default: "" }, // e.g., "Kinematics"
