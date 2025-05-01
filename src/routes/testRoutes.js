@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post("/tests/api/create", testController.createLiveTest);
 
+router.get("/tests/api/publish-test/:id", testController.publishTest);
+
 router.post("/tests/api/create/meta", testController.createTestMeta);
 
 router.post("/tests/api/create/res", testController.rescheduleTest);

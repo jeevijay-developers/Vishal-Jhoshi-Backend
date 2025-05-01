@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   bio: String,
   location: String,
   birthDate: Date,
+  image_url: { type: String },
+  bannerImage: { type: String },
   role: { type: String, default: "student" },
   progressId: { type: mongoose.Schema.Types.ObjectId, ref: "Progress" },
   studySessions: [
@@ -15,7 +17,6 @@ const userSchema = new mongoose.Schema({
   subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
   mentors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   tests: [{ type: mongoose.Schema.Types.ObjectId, ref: "Test" }],
-  image_url: { type: String },
   seenBy: [{ type: String }], // Array of user IDs who have seen the message
 });
 

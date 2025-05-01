@@ -51,6 +51,25 @@ function saveBase64Image(base64String, folder, fileName) {
   return `/images/${fileName}.${fileType}`; // Directly return the file name with /images prefix
 }
 
+exports.publishTest = async (req, res) => {
+  const { id } = req.params; // Test ID
+
+  try {
+    const test = await LiveTest.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: "Test not found" });
+    }
+
+    test.canAttempt = true;
+    await test.save();
+
+    return res.status(200).json({ message: "Test published successfully" });
+  } catch (error) {
+    console.error("Error publishing test:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.saveSelectQuestions = async (req, res) => {
   const {
     subject,
