@@ -20,6 +20,16 @@ const SelectTestQuestionSchema = new mongoose.Schema({
   imageOptionsC: { type: String, default: "" }, // Option C (Image URL or base64)
   imageOptionsD: { type: String, default: "" }, // Option D (Image URL or base64)
   correctAnswer: { type: [String], default: [] }, // Array of correct answers (for multi-select)
+  marks: {
+    correct: {
+      type: Number,
+      default: 0,
+    },
+    incorrect: {
+      type: Number,
+      default: 0,
+    },
+  },
 });
 
 module.exports = mongoose.model("SelectTestQuestion", SelectTestQuestionSchema);

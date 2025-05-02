@@ -45,9 +45,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // Handle preflight requests
 // Body Parser configuration
-app.use(bodyParser.json({ limit: "20mb" }));
-app.use(bodyParser.urlencoded({ limit: "20mb", extended: true }));
+// For JSON payloads (big ones)
+// Parse large JSON bodies
+app.use(express.json({ limit: "200mb" }));
 
+// Parse large URL-encoded bodies with deep nesting support
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "200mb",
+    parameterLimit: 100000, // Increased limit
+  })
+);
 // Serve uploaded images
 const IMAGE_FOLDER = path.join(__dirname, "../uploads", "test", "images");
 app.use("/images", express.static(IMAGE_FOLDER));

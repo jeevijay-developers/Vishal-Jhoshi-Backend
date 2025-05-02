@@ -1019,6 +1019,109 @@ exports.validateTestResult = async (req, res) => {
   }
 };
 
+exports.uploadSelectInBulk = async (req, res) => {
+  const { id } = req.params; // LiveTest ID
+  const questions = req.body.questions; // Array of question objects
+
+  // console.log(questions);
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ message: "No questions provided" });
+  }
+
+  try {
+    const test = await LiveTest.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: "LiveTest not found" });
+    }
+
+    const savedQuestions = [];
+
+    for (const q of questions) {
+      const {
+        correctAnswer,
+        description,
+        descriptionImage,
+        imageOptionsA,
+        imageOptionsB,
+        imageOptionsC,
+        imageOptionsD,
+        level,
+        optionType,
+        subject,
+        subtopic,
+        textOptionsA,
+        textOptionsB,
+        textOptionsC,
+        textOptionsD,
+        topic,
+        type,
+      } = q;
+
+      const descriptionImagePath = descriptionImage
+        ? saveBase64Image(
+            descriptionImage,
+            IMAGE_FOLDER,
+            `description_${Date.now()}`
+          )
+        : "";
+
+      const imageA = imageOptionsA
+        ? saveBase64Image(imageOptionsA, IMAGE_FOLDER, `optionA_${Date.now()}`)
+        : "";
+      const imageB = imageOptionsB
+        ? saveBase64Image(imageOptionsB, IMAGE_FOLDER, `optionB_${Date.now()}`)
+        : "";
+      const imageC = imageOptionsC
+        ? saveBase64Image(imageOptionsC, IMAGE_FOLDER, `optionC_${Date.now()}`)
+        : "";
+      const imageD = imageOptionsD
+        ? saveBase64Image(imageOptionsD, IMAGE_FOLDER, `optionD_${Date.now()}`)
+        : "";
+
+      const newQuestion = new SelectTypeQuestions({
+        correctAnswer,
+        description,
+        descriptionImage: descriptionImagePath,
+        imageOptionsA: imageA,
+        imageOptionsB: imageB,
+        imageOptionsC: imageC,
+        imageOptionsD: imageD,
+        textOptionsA,
+        textOptionsB,
+        textOptionsC,
+        textOptionsD,
+        level,
+        optionType,
+        subject,
+        subtopic,
+        topic,
+        type,
+      });
+
+      const savedQuestion = await newQuestion.save();
+      savedQuestions.push(savedQuestion);
+
+      test.Questions.push({
+        questionId: savedQuestion._id,
+        questionType: "select",
+        subject: subject,
+      });
+    }
+
+    const updatedTest = await test.save();
+
+    res.status(201).json({
+      message: `${savedQuestions.length} questions added successfully`,
+      questions: savedQuestions,
+      test: updatedTest,
+    });
+  } catch (error) {
+    console.error("Bulk upload error:", error.message);
+    res.status(500).json({ message: "Internal Server Error", error: error });
+  }
+};
+
 // try {
 
 //   if (!userId) {

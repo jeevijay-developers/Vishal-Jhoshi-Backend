@@ -19,6 +19,10 @@ router.post(
   "/tests/api/create/select/:id",
   testController.createSelectQuestion
 );
+router.post(
+  "/tests/api/create-bulk/select/:id",
+  testController.uploadSelectInBulk
+);
 router.post("/tests/api/create/match/:id", testController.createMatchQuestion);
 
 router.get("/tests/api/get/test/:role", testControllerSecond.getTest);
