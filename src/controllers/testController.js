@@ -556,16 +556,17 @@ exports.createSelectQuestion = async (req, res) => {
 };
 
 exports.createintTest = async (req, res) => {
+  let descriptionImagePath = "";
+
   try {
     const { id } = req.params; // Test ID
     const {
       subject,
-      topic,
-      subtopic,
-      level,
       type,
       description,
+      descriptionImage,
       correctAnswer,
+      marks,
     } = req.body; // Extract question details from request body
 
     // Fetch the test by ID
@@ -574,15 +575,29 @@ exports.createintTest = async (req, res) => {
       return res.status(404).json({ message: "Test not found" });
     }
 
+    // Handle description image if it exists
+    try {
+      if (descriptionImage) {
+        const uniqueFileName = `description_${Date.now()}`; // Generate a unique filename
+        const savedDescriptionImagePath = saveBase64Image(
+          descriptionImage,
+          IMAGE_FOLDER,
+          uniqueFileName
+        );
+        descriptionImagePath = savedDescriptionImagePath;
+      }
+    } catch (error) {
+      console.error("Error saving description image:", error.message);
+    }
+
     // Create a new TestQuestion object
     const newQuestion = new IntegerTypeQuestions({
       subject,
-      topic,
-      subtopic,
-      level,
       type,
       description,
+      descriptionImage: descriptionImagePath,
       correctAnswer,
+      marks,
     });
 
     // Save the question to the database
