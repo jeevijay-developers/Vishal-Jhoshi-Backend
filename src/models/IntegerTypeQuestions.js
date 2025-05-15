@@ -23,7 +23,8 @@ const TestQuestionSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ["INTEGER", "BOOLEAN"], // Specific question types
+    enum: ["integer", "boolean"], // Specific question types
+    lowercase: true,
   },
   description: {
     type: String,

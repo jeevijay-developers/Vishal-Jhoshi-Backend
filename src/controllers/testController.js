@@ -134,10 +134,10 @@ exports.createTestMeta = async (req, res) => {
       Questions,
       category,
       date,
-      description,
-      instructions,
-      negativeMarking,
-      positiveMarking,
+      // description,
+      // instructions,
+      // negativeMarking,
+      // positiveMarking,
       testName,
       time,
       timeDuration,
@@ -155,10 +155,10 @@ exports.createTestMeta = async (req, res) => {
       Questions,
       category,
       date,
-      description,
-      instructions,
-      negativeMarking,
-      positiveMarking,
+      // description,
+      // instructions,
+      // negativeMarking,
+      // positiveMarking,
       testName,
       time,
       timeDuration,
@@ -222,6 +222,8 @@ exports.createMatchQuestion = async (req, res) => {
 
   const {
     subject,
+    assertionEnglish,
+    reason,
     topic,
     subtopic,
     level,
@@ -363,6 +365,8 @@ exports.createMatchQuestion = async (req, res) => {
   // Create a new SelectTypeQuestions document
   const newQuestion = new MatchColumn({
     subject,
+    assertionEnglish,
+    reason,
     topic,
     subtopic,
     level,
@@ -444,6 +448,7 @@ exports.createSelectQuestion = async (req, res) => {
     textOptionsD,
     topic,
     type,
+    marks,
   } = req.body;
 
   // Fetch the test by ID
@@ -526,6 +531,7 @@ exports.createSelectQuestion = async (req, res) => {
     subtopic,
     topic,
     type,
+    marks: marks,
   });
 
   try {
@@ -534,7 +540,7 @@ exports.createSelectQuestion = async (req, res) => {
     // Add the question's reference to the LiveTest document
     test.Questions.push({
       questionId: question._id,
-      questionType: "select",
+      questionType: type,
       subject: subject,
     });
 
@@ -570,6 +576,8 @@ exports.createintTest = async (req, res) => {
     } = req.body; // Extract question details from request body
 
     // Fetch the test by ID
+    console.log(marks);
+
     const test = await LiveTest.findById(id);
     if (!test) {
       return res.status(404).json({ message: "Test not found" });
@@ -597,7 +605,7 @@ exports.createintTest = async (req, res) => {
       description,
       descriptionImage: descriptionImagePath,
       correctAnswer,
-      marks,
+      marks: marks,
     });
 
     // Save the question to the database
@@ -606,7 +614,7 @@ exports.createintTest = async (req, res) => {
     // Add the question's reference to the LiveTest document
     test.Questions.push({
       questionId: savedQuestion._id,
-      questionType: "integer",
+      questionType: type,
       subject: subject,
     });
     // Save the updated LiveTest document

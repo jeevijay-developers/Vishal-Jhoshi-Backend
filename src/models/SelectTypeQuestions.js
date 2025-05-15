@@ -7,7 +7,16 @@ const SelectTestQuestionSchema = new mongoose.Schema({
   level: { type: String, default: "easy" }, // Level of difficulty
   type: {
     type: String,
+    lowercase: true,
   }, // Question type
+  reason: {
+    type: String,
+    default: "",
+  },
+  assertionEnglish: {
+    type: String,
+    default: "",
+  },
   description: { type: String, default: "" }, // Question description text
   descriptionImage: { type: String, default: null }, // Base64 or image URL for the description image
   optionType: { type: String, default: "text", enum: ["text", "textImage"] }, // Option type

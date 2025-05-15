@@ -145,9 +145,12 @@ exports.getQuestion = async (req, res) => {
   try {
     const { questionId, questionType } = req.params;
     let data = null;
-    if (questionType === "integer") {
+    if (questionType === "integer" || questionType === "boolean") {
       data = await IntegerTypeQuestions.findById(questionId);
-    } else if (questionType === "select") {
+    } else if (
+      questionType === "single_choice" ||
+      questionType === "multiple_choice"
+    ) {
       data = await SelectTypeQuestions.findById(questionId);
     } else {
       data = await MatchColumn.findById(questionId);
