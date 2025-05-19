@@ -15,9 +15,9 @@ exports.signUpController = async (req, res) => {
     return res.json(badRequest([errors.array()]));
   }
 
-  const { email, password, name } = req.body;
+  const { email, password, name, target } = req.body;
 
-  console.log(req.body);
+  // console.log(req.body);
 
   try {
     const existingUser = await User.findOne({ email });
@@ -26,7 +26,12 @@ exports.signUpController = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ email, password: hashedPassword, name });
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      name,
+      target,
+    });
     await newUser.save();
 
     res.json(created({ message: "User created successfully" }));
