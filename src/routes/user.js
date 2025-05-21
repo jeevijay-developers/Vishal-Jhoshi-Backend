@@ -11,16 +11,29 @@ const {
   getStudySessions,
   getAllStudySessions,
 } = require("../controllers/userController");
+const {
+  updateUserInfo,
+  updateImageUrl,
+} = require("../controllers/authController");
+const upload = require("../middleware/multer");
 
 const router = express.Router();
 
 router.post("/me", getMyProfile);
+
+router.put("/update-user/:userId", updateUserInfo);
 
 router.put("/me", updateProfile);
 
 router.get("/users/:userId", getOtherUserProfile);
 
 router.post("/update-image/", updateImage);
+
+router.put(
+  "/update-image-url/:userId/:target",
+  upload.single("image"),
+  updateImageUrl
+);
 
 router.get("/progress/:progressId", getUserProgress);
 

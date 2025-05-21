@@ -8,6 +8,7 @@ const {
   internalServerError,
 } = require("../helpers/responseType/index.js");
 const User = require("../models/User");
+const cloudinary = require("../middleware/cloudinary");
 
 exports.signUpController = async (req, res) => {
   const errors = validationResult(req);
@@ -31,6 +32,11 @@ exports.signUpController = async (req, res) => {
       password: hashedPassword,
       name,
       target,
+      bio: "",
+      location: "",
+      bannerImage: "",
+      image_url: "",
+      birthDate: Date.now(),
     });
     await newUser.save();
 
@@ -108,6 +114,77 @@ exports.updatePassword = async (req, res) => {
     await user.save();
 
     res.json(success({ message: "Password updated successfully." }));
+  } catch (error) {
+    res.json(internalServerError([error.message || error]));
+  }
+};
+
+exports.updateUserInfo = async (req, res) => {
+  const { bio, birthDate, email, location, name } = req.body;
+  const userId = req.params.userId;
+  try {
+    // find user with the given email and diffrent id
+    const isEmailUsed = await User.findOne({ email, _id: { $ne: userId } });
+    if (isEmailUsed) {
+      return res.json(badRequest([{ message: "Email Is Already Used" }]));
+    } else {
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.json(badRequest([{ message: "User not found." }]));
+      }
+
+      user.name = name;
+      user.email = email;
+      user.bio = bio;
+      user.location = location;
+      user.birthDate = birthDate;
+      const savedUser = await user.save();
+
+      return res.json(
+        success({ message: "User updated successfully", user: savedUser })
+      );
+    }
+  } catch (error) {
+    res.json(internalServerError([error.message || error]));
+  }
+};
+
+exports.updateImageUrl = async (req, res) => {
+  const { userId, target } = req.params;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json(badRequest([{ message: "User not found." }]));
+    }
+
+    if (!req.file) {
+      return res.json(badRequest([{ message: "No image file provided." }]));
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: "user_images" },
+      async (error, result) => {
+        if (error) {
+          return res.json(internalServerError([error.message || error]));
+        }
+
+        // Save the URL in the database
+        if (target === "image_url") user.image_url = result.secure_url;
+        else user.bannerImage = result.secure_url;
+        await user.save();
+
+        return res.json({
+          message: "Image updated successfully",
+          imageUrl: result.secure_url,
+        });
+      }
+    );
+
+    // Pipe the file buffer into the Cloudinary upload stream
+    const streamifier = require("streamifier");
+    streamifier.createReadStream(req.file.buffer).pipe(result);
   } catch (error) {
     res.json(internalServerError([error.message || error]));
   }
