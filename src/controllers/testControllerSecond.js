@@ -73,7 +73,9 @@ exports.getAttendedTest = async (req, res) => {
     const { id } = req.params; // `id` represents the student ID
 
     // Find all test sessions associated with the student ID
-    const testSessions = await TestSession.find({ studentId: id });
+    const testSessions = await TestSession.find({ studentId: id }).populate(
+      "liveTestId"
+    );
     // If no sessions are found, return a 404 response
     if (testSessions.length === 0) {
       return res

@@ -120,7 +120,7 @@ exports.updateProfile = async (req, res) => {
 exports.getOtherUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).select("name bio location");
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (error) {

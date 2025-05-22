@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
   mentors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   tests: [{ type: mongoose.Schema.Types.ObjectId, ref: "Test" }],
   seenBy: [{ type: String }], // Array of user IDs who have seen the message
+  mentorship: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Mentorship",
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);
