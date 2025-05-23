@@ -122,3 +122,38 @@ exports.chatUserList = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.getAllRoomsById = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const rooms = await ChatRoom.find({
+      $or: [{ firstUser: userId }, { secondUser: userId }],
+    })
+      .populate("firstUser")
+      .populate("secondUser")
+      .lean();
+
+    const otherUsersMap = new Map();
+
+    rooms.forEach((room) => {
+      const { firstUser, secondUser } = room;
+
+      if (!room.firstUser || !room.secondUser) return;
+
+      const other =
+        firstUser._id.toString() === userId ? secondUser : firstUser;
+
+      if (other) {
+        otherUsersMap.set(other._id.toString(), other);
+      }
+    });
+
+    const otherUsers = Array.from(otherUsersMap.values());
+
+    return res.json(otherUsers);
+  } catch (error) {
+    console.error("getAllRoomsById error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

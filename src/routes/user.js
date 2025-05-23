@@ -10,6 +10,9 @@ const {
   updateImage,
   getStudySessions,
   getAllStudySessions,
+  getAllMentors,
+  createMentorship,
+  getMentorshipDetails,
 } = require("../controllers/userController");
 const {
   updateUserInfo,
@@ -26,6 +29,9 @@ router.put("/update-user/:userId", updateUserInfo);
 router.put("/me", updateProfile);
 
 router.get("/users/:userId", getOtherUserProfile);
+router.get("/mentors", getAllMentors);
+router.post("/create-mentorship/:userId", createMentorship);
+router.get("/get-mentorship/:userId", getMentorshipDetails);
 
 router.post("/update-image/", updateImage);
 

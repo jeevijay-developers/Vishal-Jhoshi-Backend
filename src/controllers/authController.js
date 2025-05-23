@@ -9,6 +9,7 @@ const {
 } = require("../helpers/responseType/index.js");
 const User = require("../models/User");
 const cloudinary = require("../middleware/cloudinary");
+const ChatRoom = require("../models/ChatRoom.js");
 
 exports.signUpController = async (req, res) => {
   const errors = validationResult(req);
@@ -25,6 +26,11 @@ exports.signUpController = async (req, res) => {
     if (existingUser) {
       return res.json(badRequest([{ message: "User already exists" }]));
     }
+    const admin = await User.findOne({ role: "admin" });
+
+    if (!admin) {
+      return res.json(badRequest([{ message: "Admin user not found" }]));
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -38,7 +44,18 @@ exports.signUpController = async (req, res) => {
       image_url: "",
       birthDate: Date.now(),
     });
-    await newUser.save();
+    const savedUser = await newUser.save();
+    // fetch the admin user
+
+    // create a ChatRoom
+    const chatRoom = new ChatRoom({
+      firstRoom: `${admin._id}_${savedUser._id}`,
+      secondRoom: `${savedUser._id}_${admin._id}`,
+      firstUser: admin._id,
+      secondUser: savedUser._id,
+    });
+
+    await chatRoom.save();
 
     res.json(created({ message: "User created successfully" }));
   } catch (error) {
@@ -133,8 +150,8 @@ exports.updateUserInfo = async (req, res) => {
         return res.json(badRequest([{ message: "User not found." }]));
       }
 
-      user.name = name;
       user.email = email;
+      user.name = name;
       user.bio = bio;
       user.location = location;
       user.birthDate = birthDate;

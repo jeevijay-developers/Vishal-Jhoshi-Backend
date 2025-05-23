@@ -22,7 +22,9 @@ const userSchema = new mongoose.Schema({
   mentorship: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Mentorship",
+    default: null,
   },
+  status: { type: Boolean, default: true }, // true for active, false for inactive
 });
 
 module.exports = mongoose.model("User", userSchema);

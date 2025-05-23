@@ -6,6 +6,7 @@ const { internalServerError } = require("../helpers/responseType");
 const path = require("path");
 const formidable = require("formidable");
 const fs = require("fs");
+const Mentorship = require("../models/Mentorship");
 
 // Folder to store uploaded images
 const IMAGE_FOLDER = path.join(__dirname, "../../uploads", "test", "images");
@@ -125,6 +126,59 @@ exports.getOtherUserProfile = async (req, res) => {
     res.json(user);
   } catch (error) {
     res.json(internalServerError());
+  }
+};
+
+exports.getAllMentors = async (req, res) => {
+  try {
+    const users = await User.find({ role: "mentor" }).populate("mentorship");
+    res.json(users?.reverse() || []);
+  } catch (error) {
+    console.log(error);
+
+    res.json(internalServerError());
+  }
+};
+
+exports.getMentorshipDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const users = await User.findById(userId).populate("mentorship");
+    res.json(users);
+  } catch (error) {
+    console.log(error);
+
+    res.json(internalServerError());
+  }
+};
+
+exports.createMentorship = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { ranking, experties, experience, menteesCount } = req.body;
+
+    const newMentorship = new Mentorship({
+      ranking,
+      experties,
+      experience,
+      menteesCount,
+    });
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const savedMentorship = await newMentorship.save();
+    user.mentorship = savedMentorship._id;
+    await user.save();
+    res.status(201).json({
+      message: "Mentorship created successfully",
+      data: savedMentorship,
+    });
+  } catch (error) {
+    console.error("Error creating mentorship:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
