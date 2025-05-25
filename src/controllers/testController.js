@@ -1,6 +1,8 @@
 const mammoth = require("mammoth");
 const Progress = require("../models/Progress");
 const User = require("../models/User");
+const TestSession = require("../models/attendedTests"); // Import the TestSession model
+
 const Leaderboard = require("../models/TestLeaderboard");
 const { validationResult } = require("express-validator");
 const {
@@ -25,6 +27,7 @@ const SelectTypeQuestions = require("../models/SelectTypeQuestions");
 const MatchColumn = require("../models/matchColumnSchema");
 const AnswersSchema = require("../models/AnswersSchema");
 const TestLeaderboard = require("../models/TestLeaderboard");
+const cloudinary = require("../middleware/cloudinary");
 
 // const { created } = require("../helpers/responseHelper"); // Assuming you have a response helper
 
@@ -423,13 +426,149 @@ exports.createMatchQuestion = async (req, res) => {
 // const { saveBase64Image } = require("./path/to/your/imageSavingUtility"); // Adjust path as needed
 // const IMAGE_FOLDER = "/path/to/your/image/folder"; // Ensure this is defined correctly
 
+// exports.createSelectQuestion = async (req, res) => {
+//   const { id } = req.params; // Test ID
+
+//   let imageA, imageB, imageC, imageD;
+//   let descriptionImagePath = "";
+
+//   // Destructuring request body with default values
+//   let {
+//     correctAnswer,
+//     description,
+//     descriptionImage,
+//     imageOptionsA,
+//     imageOptionsB,
+//     imageOptionsC,
+//     imageOptionsD,
+//     level,
+//     optionType,
+//     subject,
+//     subtopic,
+//     textOptionsA,
+//     textOptionsB,
+//     textOptionsC,
+//     textOptionsD,
+//     topic,
+//     type,
+//     marks,
+//   } = req.body;
+
+//   // Fetch the test by ID
+//   const test = await LiveTest.findById(id);
+//   if (!test) {
+//     return res.status(404).json({ message: "Test not found" });
+//   }
+
+//   // Handle description image if it exists
+//   try {
+//     if (descriptionImage) {
+//       const uniqueFileName = `description_${Date.now()}`; // Generate a unique filename
+//       const savedDescriptionImagePath = saveBase64Image(
+//         descriptionImage,
+//         IMAGE_FOLDER,
+//         uniqueFileName
+//       );
+//       descriptionImagePath = savedDescriptionImagePath;
+//     }
+//   } catch (error) {
+//     console.error("Error saving description image:", error.message);
+//   }
+
+//   // Handle option A image if it exists
+//   try {
+//     if (imageOptionsA) {
+//       const uniqueFileName = `optionA_${Date.now()}`; // Generate a unique filename
+//       imageA = saveBase64Image(imageOptionsA, IMAGE_FOLDER, uniqueFileName);
+//     }
+//   } catch (error) {
+//     console.error("Error saving image for Option A:", error.message);
+//   }
+
+//   // Handle option B image if it exists
+//   try {
+//     if (imageOptionsB) {
+//       const uniqueFileName = `optionB_${Date.now()}`; // Generate a unique filename
+//       imageB = saveBase64Image(imageOptionsB, IMAGE_FOLDER, uniqueFileName);
+//     }
+//   } catch (error) {
+//     console.error("Error saving image for Option B:", error.message);
+//   }
+
+//   // Handle option C image if it exists
+//   try {
+//     if (imageOptionsC) {
+//       const uniqueFileName = `optionC_${Date.now()}`; // Generate a unique filename
+//       imageC = saveBase64Image(imageOptionsC, IMAGE_FOLDER, uniqueFileName);
+//     }
+//   } catch (error) {
+//     console.error("Error saving image for Option C:", error.message);
+//   }
+
+//   // Handle option D image if it exists
+//   try {
+//     if (imageOptionsD) {
+//       const uniqueFileName = `optionD_${Date.now()}`; // Generate a unique filename
+//       imageD = saveBase64Image(imageOptionsD, IMAGE_FOLDER, uniqueFileName);
+//     }
+//   } catch (error) {
+//     console.error("Error saving image for Option D:", error.message);
+//   }
+
+//   // Create a new SelectTypeQuestions document
+//   const newQuestion = new SelectTypeQuestions({
+//     correctAnswer,
+//     description,
+//     descriptionImage: descriptionImagePath,
+//     imageOptionsA: imageA,
+//     imageOptionsB: imageB,
+//     imageOptionsC: imageC,
+//     imageOptionsD: imageD,
+//     textOptionsA,
+//     textOptionsB,
+//     textOptionsC,
+//     textOptionsD,
+//     level,
+//     optionType,
+//     subject,
+//     subtopic,
+//     topic,
+//     type,
+//     marks: marks,
+//   });
+
+//   try {
+//     const question = await newQuestion.save();
+
+//     // Add the question's reference to the LiveTest document
+//     test.Questions.push({
+//       questionId: question._id,
+//       questionType: type,
+//       subject: subject,
+//     });
+
+//     // Save the updated LiveTest document
+//     const updatedTest = await test.save();
+
+//     return res.status(200).json({
+//       message: "Question created and added to the test successfully",
+//       question: question,
+//       test: updatedTest,
+//     });
+//   } catch (error) {
+//     console.error("Error creating and linking the question:", error);
+//     return res.status(500).json({
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
 exports.createSelectQuestion = async (req, res) => {
   const { id } = req.params; // Test ID
 
   let imageA, imageB, imageC, imageD;
   let descriptionImagePath = "";
 
-  // Destructuring request body with default values
   let {
     correctAnswer,
     description,
@@ -451,105 +590,83 @@ exports.createSelectQuestion = async (req, res) => {
     marks,
   } = req.body;
 
-  // Fetch the test by ID
-  const test = await LiveTest.findById(id);
-  if (!test) {
-    return res.status(404).json({ message: "Test not found" });
-  }
-
-  // Handle description image if it exists
   try {
+    const test = await LiveTest.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: "Test not found" });
+    }
+
+    const uploadToCloudinary = async (base64, label) => {
+      try {
+        const result = await cloudinary.uploader.upload(base64, {
+          folder: "select_question_options",
+          public_id: `${label}_${Date.now()}`,
+        });
+        return result.secure_url;
+      } catch (err) {
+        console.error(`Cloudinary upload failed for ${label}:`, err.message);
+        return "";
+      }
+    };
+
+    // Upload all images if present
     if (descriptionImage) {
-      const uniqueFileName = `description_${Date.now()}`; // Generate a unique filename
-      const savedDescriptionImagePath = saveBase64Image(
+      descriptionImagePath = await uploadToCloudinary(
         descriptionImage,
-        IMAGE_FOLDER,
-        uniqueFileName
+        "description"
       );
-      descriptionImagePath = savedDescriptionImagePath;
     }
-  } catch (error) {
-    console.error("Error saving description image:", error.message);
-  }
 
-  // Handle option A image if it exists
-  try {
     if (imageOptionsA) {
-      const uniqueFileName = `optionA_${Date.now()}`; // Generate a unique filename
-      imageA = saveBase64Image(imageOptionsA, IMAGE_FOLDER, uniqueFileName);
+      imageA = await uploadToCloudinary(imageOptionsA, "optionA");
     }
-  } catch (error) {
-    console.error("Error saving image for Option A:", error.message);
-  }
 
-  // Handle option B image if it exists
-  try {
     if (imageOptionsB) {
-      const uniqueFileName = `optionB_${Date.now()}`; // Generate a unique filename
-      imageB = saveBase64Image(imageOptionsB, IMAGE_FOLDER, uniqueFileName);
+      imageB = await uploadToCloudinary(imageOptionsB, "optionB");
     }
-  } catch (error) {
-    console.error("Error saving image for Option B:", error.message);
-  }
 
-  // Handle option C image if it exists
-  try {
     if (imageOptionsC) {
-      const uniqueFileName = `optionC_${Date.now()}`; // Generate a unique filename
-      imageC = saveBase64Image(imageOptionsC, IMAGE_FOLDER, uniqueFileName);
+      imageC = await uploadToCloudinary(imageOptionsC, "optionC");
     }
-  } catch (error) {
-    console.error("Error saving image for Option C:", error.message);
-  }
 
-  // Handle option D image if it exists
-  try {
     if (imageOptionsD) {
-      const uniqueFileName = `optionD_${Date.now()}`; // Generate a unique filename
-      imageD = saveBase64Image(imageOptionsD, IMAGE_FOLDER, uniqueFileName);
+      imageD = await uploadToCloudinary(imageOptionsD, "optionD");
     }
-  } catch (error) {
-    console.error("Error saving image for Option D:", error.message);
-  }
 
-  // Create a new SelectTypeQuestions document
-  const newQuestion = new SelectTypeQuestions({
-    correctAnswer,
-    description,
-    descriptionImage: descriptionImagePath,
-    imageOptionsA: imageA,
-    imageOptionsB: imageB,
-    imageOptionsC: imageC,
-    imageOptionsD: imageD,
-    textOptionsA,
-    textOptionsB,
-    textOptionsC,
-    textOptionsD,
-    level,
-    optionType,
-    subject,
-    subtopic,
-    topic,
-    type,
-    marks: marks,
-  });
+    const newQuestion = new SelectTypeQuestions({
+      correctAnswer,
+      description,
+      descriptionImage: descriptionImagePath,
+      imageOptionsA: imageA,
+      imageOptionsB: imageB,
+      imageOptionsC: imageC,
+      imageOptionsD: imageD,
+      textOptionsA,
+      textOptionsB,
+      textOptionsC,
+      textOptionsD,
+      level,
+      optionType,
+      subject,
+      subtopic,
+      topic,
+      type,
+      marks: Number(marks),
+    });
 
-  try {
     const question = await newQuestion.save();
 
-    // Add the question's reference to the LiveTest document
     test.Questions.push({
       questionId: question._id,
       questionType: type,
-      subject: subject,
+      subject,
     });
 
-    // Save the updated LiveTest document
     const updatedTest = await test.save();
 
     return res.status(200).json({
       message: "Question created and added to the test successfully",
-      question: question,
+      question,
       test: updatedTest,
     });
   } catch (error) {
@@ -561,6 +678,79 @@ exports.createSelectQuestion = async (req, res) => {
   }
 };
 
+// exports.createintTest = async (req, res) => {
+//   let descriptionImagePath = "";
+
+//   try {
+//     const { id } = req.params; // Test ID
+//     const {
+//       subject,
+//       type,
+//       description,
+//       descriptionImage,
+//       correctAnswer,
+//       marks,
+//     } = req.body; // Extract question details from request body
+
+//     // Fetch the test by ID
+//     console.log(marks);
+
+//     const test = await LiveTest.findById(id);
+//     if (!test) {
+//       return res.status(404).json({ message: "Test not found" });
+//     }
+
+//     // Handle description image if it exists
+//     try {
+//       if (descriptionImage) {
+//         const uniqueFileName = `description_${Date.now()}`; // Generate a unique filename
+//         const savedDescriptionImagePath = saveBase64Image(
+//           descriptionImage,
+//           IMAGE_FOLDER,
+//           uniqueFileName
+//         );
+//         descriptionImagePath = savedDescriptionImagePath;
+//       }
+//     } catch (error) {
+//       console.error("Error saving description image:", error.message);
+//     }
+
+//     // Create a new TestQuestion object
+//     const newQuestion = new IntegerTypeQuestions({
+//       subject,
+//       type,
+//       description,
+//       descriptionImage: descriptionImagePath,
+//       correctAnswer,
+//       marks: marks,
+//     });
+
+//     // Save the question to the database
+//     const savedQuestion = await newQuestion.save();
+
+//     // Add the question's reference to the LiveTest document
+//     test.Questions.push({
+//       questionId: savedQuestion._id,
+//       questionType: type,
+//       subject: subject,
+//     });
+//     // Save the updated LiveTest document
+//     const updatedTest = await test.save();
+
+//     return res.status(200).json({
+//       message: "Question created and added to the test successfully",
+//       question: savedQuestion,
+//       test: updatedTest,
+//     });
+//   } catch (error) {
+//     console.error("Error creating and linking the question:", error);
+//     return res.status(500).json({
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.createintTest = async (req, res) => {
   let descriptionImagePath = "";
 
@@ -570,54 +760,57 @@ exports.createintTest = async (req, res) => {
       subject,
       type,
       description,
-      descriptionImage,
+      descriptionImage, // base64 string
       correctAnswer,
       marks,
-    } = req.body; // Extract question details from request body
+    } = req.body;
 
-    // Fetch the test by ID
-    console.log(marks);
+    if (!subject || !type || !description || !correctAnswer || !marks) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
     const test = await LiveTest.findById(id);
     if (!test) {
       return res.status(404).json({ message: "Test not found" });
     }
 
-    // Handle description image if it exists
-    try {
-      if (descriptionImage) {
-        const uniqueFileName = `description_${Date.now()}`; // Generate a unique filename
-        const savedDescriptionImagePath = saveBase64Image(
+    // Handle description image via Cloudinary if it exists
+    if (descriptionImage) {
+      try {
+        const uploadResult = await cloudinary.uploader.upload(
           descriptionImage,
-          IMAGE_FOLDER,
-          uniqueFileName
+          {
+            folder: "test_questions",
+          }
         );
-        descriptionImagePath = savedDescriptionImagePath;
+        descriptionImagePath = uploadResult.secure_url;
+      } catch (error) {
+        console.error("Cloudinary upload error:", error.message);
+        return res.status(500).json({
+          message: "Failed to upload image",
+          error: error.message,
+        });
       }
-    } catch (error) {
-      console.error("Error saving description image:", error.message);
     }
 
-    // Create a new TestQuestion object
+    // Create a new IntegerTypeQuestions object
     const newQuestion = new IntegerTypeQuestions({
       subject,
       type,
       description,
       descriptionImage: descriptionImagePath,
-      correctAnswer,
-      marks: marks,
+      correctAnswer: Number(correctAnswer),
+      marks: Number(marks),
     });
 
-    // Save the question to the database
     const savedQuestion = await newQuestion.save();
 
-    // Add the question's reference to the LiveTest document
     test.Questions.push({
       questionId: savedQuestion._id,
       questionType: type,
-      subject: subject,
+      subject,
     });
-    // Save the updated LiveTest document
+
     const updatedTest = await test.save();
 
     return res.status(200).json({
@@ -633,7 +826,6 @@ exports.createintTest = async (req, res) => {
     });
   }
 };
-
 exports.createLiveTest = async (req, res) => {
   const {
     Questions,
@@ -957,11 +1149,11 @@ exports.validateTestResult = async (req, res) => {
   const test = req.body;
   console.log(test);
 
-  if (test.length === 0) {
-    return res.status(400).json({
-      message: "Please solve some questions...",
-    });
-  }
+  // if (test.length === 0) {
+  //   return res.status(400).json({
+  //     message: "Please solve some questions...",
+  //   });
+  // }
 
   const testId = test[0].testId;
   const userId = test[0].userId;
@@ -1034,6 +1226,24 @@ exports.validateTestResult = async (req, res) => {
     });
 
     await testStats.save();
+    // update the test completion time
+    // update the test completion time
+    // Check if a session already exists for this student and test
+    const existingSession = await TestSession.findOne({
+      liveTestId: testId,
+      studentId: userId,
+    });
+
+    if (!existingSession) {
+      return res
+        .status(400)
+        .json({ message: "Test session already exists for this student." });
+    }
+
+    // Get the current timestamp as the start time
+    const startTime = new Date();
+    existingSession.endTime = startTime;
+    await existingSession.save();
 
     return res.status(200).json({ message: "Data stored successfully." });
   } catch (err) {

@@ -52,6 +52,7 @@ exports.updateTestAttemp = async (req, res) => {
 exports.getTestById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id);
 
     const test = await LiveTest.findById(id);
 
@@ -77,7 +78,9 @@ exports.getAttendedTest = async (req, res) => {
       "liveTestId"
     );
     // If no sessions are found, return a 404 response
-    if (testSessions.length === 0) {
+    console.log(id, testSessions);
+
+    if (testSessions.length <= 0) {
       return res
         .status(404)
         .json({ message: "No test sessions found for this student." });
@@ -134,6 +137,34 @@ exports.attendTest = async (req, res) => {
     res.status(201).json({
       message: "Test session created successfully.",
       data: savedSession,
+    });
+  } catch (error) {
+    console.error("Error creating test session:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error.", error: error.message });
+  }
+};
+
+exports.getAttendTest = async (req, res) => {
+  try {
+    const { testId, studentId } = req.params;
+
+    // Check if a session already exists for this student and test
+    const existingSession = await TestSession.findOne({
+      liveTestId: testId,
+      studentId,
+    }).populate("liveTestId");
+
+    if (!existingSession) {
+      return res
+        .status(400)
+        .json({ message: "Test session not exists for this student." });
+    }
+
+    res.status(201).json({
+      message: "Test session created successfully.",
+      data: existingSession,
     });
   } catch (error) {
     console.error("Error creating test session:", error);
