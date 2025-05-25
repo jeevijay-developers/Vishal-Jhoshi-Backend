@@ -7,8 +7,8 @@ const userSchema = new mongoose.Schema({
   bio: String,
   location: String,
   birthDate: Date,
-  image_url: { type: String },
-  bannerImage: { type: String },
+  image_url: { type: String, default: "" },
+  bannerImage: { type: String, default: "" },
   role: { type: String, default: "student" },
   progressId: { type: mongoose.Schema.Types.ObjectId, ref: "Progress" },
   studySessions: [

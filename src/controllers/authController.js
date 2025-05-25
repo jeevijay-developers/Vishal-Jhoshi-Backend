@@ -10,6 +10,7 @@ const {
 const User = require("../models/User");
 const cloudinary = require("../middleware/cloudinary");
 const ChatRoom = require("../models/ChatRoom.js");
+const Mentorship = require("../models/Mentorship.js");
 
 exports.signUpController = async (req, res) => {
   const errors = validationResult(req);
@@ -165,6 +166,66 @@ exports.updateUserInfo = async (req, res) => {
     res.json(internalServerError([error.message || error]));
   }
 };
+
+// exports.createNewMentor = async (req, res) => {
+//   const User = require("../models/User");
+//   const Mentorship = require("../models/Mentorship");
+
+exports.createNewMentor = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      target,
+      mentorship: { ranking, experties, experience, menteesCount },
+    } = req.body;
+
+    // Target validation (allow only specific values)
+    const allowedTargets = ["JEE Mains", "JEE Advanced", "NEET"];
+    if (!allowedTargets.includes(target)) {
+      return res.status(400).json({ error: "Invalid target selected." });
+    }
+
+    // Check if email already exists
+    const isEmailUsed = await User.findOne({ email });
+    if (isEmailUsed) {
+      return res.status(400).json({ error: "Email is already used." });
+    }
+
+    // Create mentorship document
+    const mentorship = new Mentorship({
+      ranking,
+      experties,
+      experience,
+      menteesCount,
+    });
+
+    const savedMentorship = await mentorship.save();
+
+    // Create mentor user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword, // (Consider hashing with bcrypt before saving)
+      target,
+      role: "mentor",
+      mentorship: savedMentorship._id,
+    });
+
+    const savedUser = await user.save();
+
+    res.status(201).json({
+      message: "Mentor created successfully",
+      mentor: savedUser,
+    });
+  } catch (err) {
+    console.error("Error creating mentor:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+// };
 
 exports.updateImageUrl = async (req, res) => {
   const { userId, target } = req.params;

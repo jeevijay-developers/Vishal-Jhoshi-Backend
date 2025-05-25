@@ -17,6 +17,7 @@ const {
 const {
   updateUserInfo,
   updateImageUrl,
+  createNewMentor,
 } = require("../controllers/authController");
 const upload = require("../middleware/multer");
 
@@ -32,6 +33,7 @@ router.get("/users/:userId", getOtherUserProfile);
 router.get("/mentors", getAllMentors);
 router.post("/create-mentorship/:userId", createMentorship);
 router.get("/get-mentorship/:userId", getMentorshipDetails);
+router.post("/create-new-mentor", createNewMentor);
 
 router.post("/update-image/", updateImage);
 
