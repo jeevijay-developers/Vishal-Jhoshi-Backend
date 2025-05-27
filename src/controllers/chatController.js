@@ -3,6 +3,7 @@ const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const ChatRoom = require("../models/ChatRoom");
 const User = require("../models/User");
+const { path } = require("..");
 // const Message = require("../../models/Message");
 
 exports.userChats = async (req, res) => {
@@ -15,12 +16,24 @@ exports.userChats = async (req, res) => {
     // Check for chats in the first room ID
     let room = await ChatRoom.findOne({
       $or: [{ firstRoom: firstRoomId }, { secondRoom: secondRoomId }],
-    }).populate("chats");
+    })
+      .populate("seenBy")
+      .populate({
+        path: "chats",
+        options: { sort: { createdAt: 1 } }, // sort chats by timestamp descending
+        populate: [{ path: "sender" }, { path: "recipient" }],
+      });
     if (!room) {
       // If not found, check for chats in the second room ID
       room = await ChatRoom.findOne({
         $or: [{ firstRoom: secondRoomId }, { secondRoom: firstRoomId }],
-      }).populate("chats");
+      })
+        .populate("seenBy")
+        .populate({
+          path: "chats",
+          options: { sort: { createdAt: 1 } }, // sort chats by timestamp descending
+          populate: [{ path: "sender" }, { path: "recipient" }],
+        });
     }
 
     // console.log(room);
@@ -132,6 +145,7 @@ exports.getAllRoomsById = async (req, res) => {
     })
       .populate("firstUser")
       .populate("secondUser")
+      .sort({ updatedAt: -1 })
       .lean();
 
     const otherUsersMap = new Map();

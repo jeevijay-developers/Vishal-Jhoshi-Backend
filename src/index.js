@@ -119,6 +119,7 @@ io.on("connection", (socket) => {
       if (!roomId) {
         return console.error("Invalid roomId:", roomId);
       }
+      console.log(MESSAGE);
 
       saveMessage(MESSAGE)
         .then((data) => {
