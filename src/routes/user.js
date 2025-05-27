@@ -13,11 +13,14 @@ const {
   getAllMentors,
   createMentorship,
   getMentorshipDetails,
+  getAllMentorsAndStudents,
+  getMyMentor,
 } = require("../controllers/userController");
 const {
   updateUserInfo,
   updateImageUrl,
   createNewMentor,
+  assignMentor,
 } = require("../controllers/authController");
 const upload = require("../middleware/multer");
 
@@ -55,5 +58,9 @@ router.post("/studyMode/stopStudySession", stopStudySession);
 
 router.get("/studyMode/study-sessions", getStudySessions);
 router.get("/studyMode/all/:userId", getAllStudySessions);
+router.get("/get-all-mentors-students", getAllMentorsAndStudents);
+
+router.put("/assign-mentor/:userId/:mentorId", assignMentor);
+router.get("/get-my-mentor/:userId", getMyMentor);
 
 module.exports = router;

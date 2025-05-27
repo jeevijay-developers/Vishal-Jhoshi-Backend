@@ -267,3 +267,34 @@ exports.updateImageUrl = async (req, res) => {
     res.json(internalServerError([error.message || error]));
   }
 };
+
+exports.assignMentor = async (req, res) => {
+  try {
+    const { userId, mentorId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json(badRequest([{ message: "User not found." }]));
+    }
+    const mentor = await User.findById(mentorId).populate("mentorship");
+    if (!mentor) {
+      return res.json(badRequest([{ message: "Mentor not found." }]));
+    }
+
+    user.mentors = mentor._id;
+    await user.save();
+
+    // update mentorship
+    const mentorship = await Mentorship.findById(mentor.mentorship);
+    if (!mentorship) {
+      return res.json(badRequest([{ message: "Mentorship not found." }]));
+    }
+    // push the student
+    mentorship.students.push(user._id);
+    mentorship.menteesCount = mentorship.menteesCount + 1;
+    await mentorship.save();
+
+    return res.json(success({ message: "Mentor assigned successfully" }));
+  } catch (error) {
+    res.json(internalServerError([error.message || error]));
+  }
+};

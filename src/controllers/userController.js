@@ -372,3 +372,46 @@ exports.getAllStudySessions = async (req, res) => {
     res.status(500).json({ message: "Error fetching study sessions." });
   }
 };
+
+exports.getAllMentorsAndStudents = async (req, res) => {
+  try {
+    const mentors = await User.find({ role: "mentor" }).populate("mentorship");
+    const students = await User.find({ role: "student" }).populate("mentors");
+    return res.json({ mentors: mentors, students: students });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Error fetching mentors and students." });
+  }
+};
+
+exports.getMyMentor = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).populate({
+      path: "mentors",
+      populate: {
+        path: "mentorship", // Only needed if `mentorship` is a referenced model
+      },
+    });
+
+    if (!user || !user.mentors) {
+      return res.status(404).json({
+        success: false,
+        errors: [{ message: "Mentor not found." }],
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      mentor: user.mentors,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      errors: [{ message: error.message || "Internal server error." }],
+    });
+  }
+};
