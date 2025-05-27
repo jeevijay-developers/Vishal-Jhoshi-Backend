@@ -30,6 +30,8 @@ const saveMessage = async (message) => {
 
     if (room) {
       room.chats.push(newMessage._id); // Use only the message's ObjectId
+      room.seenBy = [];
+      room.seenBy.push(senderId);
       await room.save();
     } else {
       // Create a new room if none exists

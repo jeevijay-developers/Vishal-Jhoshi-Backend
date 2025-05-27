@@ -291,6 +291,14 @@ exports.assignMentor = async (req, res) => {
     // push the student
     mentorship.students.push(user._id);
     mentorship.menteesCount = mentorship.menteesCount + 1;
+    const chatRoom = new ChatRoom({
+      firstRoom: `${userId}_${mentorId}`,
+      secondRoom: `${mentorId}_${userId}`,
+      firstUser: userId,
+      secondUser: mentorId,
+    });
+
+    await chatRoom.save();
     await mentorship.save();
 
     return res.json(success({ message: "Mentor assigned successfully" }));
