@@ -14,6 +14,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const testRoutes = require("./routes/testRoutes");
 const rolesRoutes = require("./routes/roles");
 const sessionRoutes = require("./routes/classSession");
+const adminTodoRoutes = require("./routes/adminTodoRoute");
 
 // Socket.IO imports
 const http = require("http");
@@ -78,7 +79,7 @@ app.use(
   rolesRoutes,
   sessionRoutes
 );
-
+app.use("/api/admin", adminTodoRoutes);
 // Create HTTP server and initialize Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
