@@ -3,7 +3,7 @@ const ChatRoom = require("../../models/ChatRoom");
 const Message = require("../../models/Message");
 
 const saveMessage = async (message) => {
-  console.log(message);
+  // console.log(message);
   const senderId = message.sender;
   const recipientId = message.recipient;
 
@@ -15,14 +15,14 @@ const saveMessage = async (message) => {
     let room = await ChatRoom.findOne({
       $or: [{ firstRoom: firstId }, { secondRoom: secondId }],
     });
-    console.log("ROOM NOT FOUND");
+    console.log(room);
     if (!room) {
       // If not found, check for chats in the second room ID
       room = await ChatRoom.findOne({
         $or: [{ firstRoom: secondId }, { secondRoom: firstId }],
       });
     }
-
+    // console.log(room);
     const newMessage = await saveMessageInDb(message);
     if (!newMessage) {
       throw new Error("Message could not be saved");
@@ -30,6 +30,8 @@ const saveMessage = async (message) => {
 
     if (room) {
       room.chats.push(newMessage._id); // Use only the message's ObjectId
+      room.seenBy = [];
+      room.seenBy.push(senderId);
       await room.save();
     } else {
       // Create a new room if none exists
@@ -56,18 +58,15 @@ const saveMessageInDb = async (message) => {
 
     const newMessage = new Message({
       sender: senderId,
-      senderName: message.senderName, // Replace with the sender's actual name
       recipient: recipientId,
-      recipientName: message.recipientName, // Replace with the recipient's actual name
       message: message.message,
-      timestamp: message.timestamp, // Current timestamp
     });
 
-    console.log("saving in the database");
-    await newMessage.save();
+    // console.log("saving in the database");
+    const savedMessage = await newMessage.save();
     // console.log("Message saved successfully:", newMessage);
 
-    return newMessage;
+    return savedMessage;
   } catch (error) {
     console.error("Error saving message:", error);
     return null;

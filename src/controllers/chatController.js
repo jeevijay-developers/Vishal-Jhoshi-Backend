@@ -3,6 +3,7 @@ const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const ChatRoom = require("../models/ChatRoom");
 const User = require("../models/User");
+const { path } = require("..");
 // const Message = require("../../models/Message");
 
 exports.userChats = async (req, res) => {
@@ -15,12 +16,24 @@ exports.userChats = async (req, res) => {
     // Check for chats in the first room ID
     let room = await ChatRoom.findOne({
       $or: [{ firstRoom: firstRoomId }, { secondRoom: secondRoomId }],
-    }).populate("chats");
+    })
+      .populate("seenBy")
+      .populate({
+        path: "chats",
+        options: { sort: { createdAt: 1 } }, // sort chats by timestamp descending
+        populate: [{ path: "sender" }, { path: "recipient" }],
+      });
     if (!room) {
       // If not found, check for chats in the second room ID
       room = await ChatRoom.findOne({
         $or: [{ firstRoom: secondRoomId }, { secondRoom: firstRoomId }],
-      }).populate("chats");
+      })
+        .populate("seenBy")
+        .populate({
+          path: "chats",
+          options: { sort: { createdAt: 1 } }, // sort chats by timestamp descending
+          populate: [{ path: "sender" }, { path: "recipient" }],
+        });
     }
 
     // console.log(room);
@@ -38,21 +51,27 @@ exports.userChats = async (req, res) => {
   }
 };
 exports.updateSeen = async (req, res) => {
-  const { userId, selectedUser } = req.params;
-
+  const { first, second, seen } = req.params;
+  const firstRoomId = `${first}_${second}`;
+  const secondRoomId = `${second}_${first}`;
   try {
-    if (userId === "admin") {
-      const user = await User.findOne({ role: "admin" });
-      if (user && !user.seenBy.includes(selectedUser)) {
-        user.seenBy.push(selectedUser);
-        await user.save();
-      }
-    } else {
-      const user = await User.findOne({ _id: userId });
-      if (user && !user.seenBy.includes(selectedUser)) {
-        user.seenBy.push(selectedUser);
-        await user.save();
-      }
+    let room = await ChatRoom.findOne({
+      $or: [{ firstRoom: firstRoomId }, { secondRoom: secondRoomId }],
+    });
+    if (!room) {
+      room = await ChatRoom.findOne({
+        $or: [{ firstRoom: secondRoomId }, { secondRoom: firstRoomId }],
+      });
+    }
+    if (!room) {
+      return res
+        .status(404)
+        .json({ message: "No room found between the users." });
+    }
+    // Avoid adding duplicate user to seenBy
+    if (!room.seenBy.includes(seen)) {
+      room.seenBy.push(seen);
+      await room.save();
     }
 
     return res.status(200).json({ message: "Seen updated successfully" });
@@ -132,24 +151,27 @@ exports.getAllRoomsById = async (req, res) => {
     })
       .populate("firstUser")
       .populate("secondUser")
+      .sort({ updatedAt: -1 })
       .lean();
 
-    const otherUsersMap = new Map();
+    const otherUsers = [];
 
     rooms.forEach((room) => {
-      const { firstUser, secondUser } = room;
+      const { firstUser, secondUser, seenBy } = room;
 
-      if (!room.firstUser || !room.secondUser) return;
+      if (!firstUser || !secondUser) return;
 
       const other =
         firstUser._id.toString() === userId ? secondUser : firstUser;
 
       if (other) {
-        otherUsersMap.set(other._id.toString(), other);
+        otherUsers.push({
+          ...other,
+          seenBy: seenBy || [],
+          hasSeen: seenBy?.includes(userId) ?? false, // optional boolean flag
+        });
       }
     });
-
-    const otherUsers = Array.from(otherUsersMap.values());
 
     return res.json(otherUsers);
   } catch (error) {
