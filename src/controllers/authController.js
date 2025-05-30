@@ -281,30 +281,93 @@ exports.updateImageUrl = async (req, res) => {
   }
 };
 
+// exports.assignMentor = async (req, res) => {
+//   try {
+//     const { userId, mentorId } = req.params;
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.json(badRequest([{ message: "User not found." }]));
+//     }
+//     const mentor = await User.findById(mentorId).populate("mentorship");
+//     if (!mentor || !mentor.mentorship) {
+//       return res.json(badRequest([{ message: "Mentor not found." }]));
+//     }
+
+//     user.mentors = mentor._id;
+//     await user.save();
+
+//     // update mentorship
+//     const mentorship = await Mentorship.findById(mentor.mentorship);
+//     // if (!mentorship) {
+//     //   return res.json(badRequest([{ message: "Mentorship not found." }]));
+//     // }
+//     // push the student
+//     if (!mentorship.students.includes(user._id)) {
+//       mentorship.students.push(user._id);
+//       mentorship.menteesCount += 1;
+//     }
+//     // mentorship.students.push(user._id);
+//     // mentorship.menteesCount = mentorship.menteesCount + 1;
+//     // check if chat room exists
+//     const isRoomExists = await ChatRoom.findOne({
+//       $or: [
+//         { firstRoom: `${userId}_${mentorId}` },
+//         { secondRoom: `${mentorId}_${userId}` },
+//       ],
+//     });
+
+//     if (!isRoomExists) {
+//       const chatRoom = new ChatRoom({
+//         firstRoom: `${userId}_${mentorId}`,
+//         secondRoom: `${mentorId}_${userId}`,
+//         firstUser: userId,
+//         secondUser: mentorId,
+//       });
+
+//       await chatRoom.save();
+//     }
+//     await mentorship.save();
+
+//     return res.json(success({ message: "Mentor assigned successfully" }));
+//   } catch (error) {
+//     res.json(internalServerError([error.message || error]));
+//   }
+// };
+
 exports.assignMentor = async (req, res) => {
   try {
     const { userId, mentorId } = req.params;
+
     const user = await User.findById(userId);
     if (!user) {
-      return res.json(badRequest([{ message: "User not found." }]));
+      return res.status(400).json(badRequest([{ message: "User not found." }]));
     }
+
     const mentor = await User.findById(mentorId).populate("mentorship");
     if (!mentor) {
-      return res.json(badRequest([{ message: "Mentor not found." }]));
+      return res
+        .status(400)
+        .json(badRequest([{ message: "Mentor not found." }]));
     }
 
+    if (!mentor.mentorship) {
+      return res
+        .status(400)
+        .json(badRequest([{ message: "Mentorship not found for mentor." }]));
+    }
+
+    // Assign mentor to user (single mentor assumed)
     user.mentors = mentor._id;
-    await user.save();
 
-    // update mentorship
-    const mentorship = await Mentorship.findById(mentor.mentorship);
-    if (!mentorship) {
-      return res.json(badRequest([{ message: "Mentorship not found." }]));
+    const mentorship = mentor.mentorship;
+
+    // Add student if not already present
+    if (!mentorship.students.includes(user._id)) {
+      mentorship.students.push(user._id);
+      mentorship.menteesCount += 1;
     }
-    // push the student
-    mentorship.students.push(user._id);
-    mentorship.menteesCount = mentorship.menteesCount + 1;
-    // check if chat room exists
+
+    // Check or create chat room
     const isRoomExists = await ChatRoom.findOne({
       $or: [
         { firstRoom: `${userId}_${mentorId}` },
@@ -313,19 +376,18 @@ exports.assignMentor = async (req, res) => {
     });
 
     if (!isRoomExists) {
-      const chatRoom = new ChatRoom({
+      await ChatRoom.create({
         firstRoom: `${userId}_${mentorId}`,
         secondRoom: `${mentorId}_${userId}`,
         firstUser: userId,
         secondUser: mentorId,
       });
-
-      await chatRoom.save();
     }
-    await mentorship.save();
+
+    await Promise.all([user.save(), mentorship.save()]);
 
     return res.json(success({ message: "Mentor assigned successfully" }));
   } catch (error) {
-    res.json(internalServerError([error.message || error]));
+    return res.status(500).json(internalServerError([error.message || error]));
   }
 };
