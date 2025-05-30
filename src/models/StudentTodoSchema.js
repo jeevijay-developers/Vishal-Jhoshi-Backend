@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 
-const AdminTodoSchema = new mongoose.Schema({
+const StudentTodoSchema = new mongoose.Schema({
+    studentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    studentName: {
+        type: String,
+        required: true,
+    },
     heading: {
         type: String,
         required: true,
@@ -28,8 +37,8 @@ const AdminTodoSchema = new mongoose.Schema({
     ],
     createdBy: {
         type: String,
-        default: 'admin',
+        default: 'student',
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model("AdminTodo", AdminTodoSchema);
+module.exports = mongoose.model("StudentTodo", StudentTodoSchema);

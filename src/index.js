@@ -15,7 +15,7 @@ const testRoutes = require("./routes/testRoutes");
 const rolesRoutes = require("./routes/roles");
 const sessionRoutes = require("./routes/classSession");
 const adminTodoRoutes = require("./routes/adminTodoRoute");
-
+const studentTodoRoutes = require("./routes/studentTodoRoute");
 // Socket.IO imports
 const http = require("http");
 const { Server } = require("socket.io");
@@ -80,6 +80,7 @@ app.use(
   sessionRoutes
 );
 app.use("/api/admin", adminTodoRoutes);
+app.use("/api/student", studentTodoRoutes);
 // Create HTTP server and initialize Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
