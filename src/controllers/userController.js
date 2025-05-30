@@ -7,6 +7,7 @@ const path = require("path");
 const formidable = require("formidable");
 const fs = require("fs");
 const Mentorship = require("../models/Mentorship");
+const ChatRoom = require("../models/ChatRoom");
 
 // Folder to store uploaded images
 const IMAGE_FOLDER = path.join(__dirname, "../../uploads", "test", "images");
@@ -171,6 +172,7 @@ exports.createMentorship = async (req, res) => {
 
     const savedMentorship = await newMentorship.save();
     user.mentorship = savedMentorship._id;
+
     await user.save();
     res.status(201).json({
       message: "Mentorship created successfully",

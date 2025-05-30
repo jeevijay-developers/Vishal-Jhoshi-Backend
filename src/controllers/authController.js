@@ -216,6 +216,19 @@ exports.createNewMentor = async (req, res) => {
 
     const savedUser = await user.save();
 
+    // fetch the admin to create room
+    const admin = await User.findOne({ role: "admin" });
+    //create new chatRoom
+    // create a ChatRoom
+    const chatRoom = new ChatRoom({
+      firstRoom: `${admin._id}_${savedUser._id}`,
+      secondRoom: `${savedUser._id}_${admin._id}`,
+      firstUser: admin._id,
+      secondUser: savedUser._id,
+    });
+
+    await chatRoom.save();
+
     res.status(201).json({
       message: "Mentor created successfully",
       mentor: savedUser,
@@ -291,14 +304,24 @@ exports.assignMentor = async (req, res) => {
     // push the student
     mentorship.students.push(user._id);
     mentorship.menteesCount = mentorship.menteesCount + 1;
-    const chatRoom = new ChatRoom({
-      firstRoom: `${userId}_${mentorId}`,
-      secondRoom: `${mentorId}_${userId}`,
-      firstUser: userId,
-      secondUser: mentorId,
+    // check if chat room exists
+    const isRoomExists = await ChatRoom.findOne({
+      $or: [
+        { firstRoom: `${userId}_${mentorId}` },
+        { secondRoom: `${mentorId}_${userId}` },
+      ],
     });
 
-    await chatRoom.save();
+    if (!isRoomExists) {
+      const chatRoom = new ChatRoom({
+        firstRoom: `${userId}_${mentorId}`,
+        secondRoom: `${mentorId}_${userId}`,
+        firstUser: userId,
+        secondUser: mentorId,
+      });
+
+      await chatRoom.save();
+    }
     await mentorship.save();
 
     return res.json(success({ message: "Mentor assigned successfully" }));
