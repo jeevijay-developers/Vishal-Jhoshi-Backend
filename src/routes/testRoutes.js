@@ -15,8 +15,9 @@ router.post("/tests/api/create/meta", testController.createTestMeta);
 router.post("/tests/api/create/res", testController.rescheduleTest);
 
 router.post("/tests/api/create/int/:id", testController.createintTest);
+router.post("/tests/api/create/int/:id", testController.createintTest);
 router.post(
-  "/tests/api/create/select/:id",
+  "/dpp/select-dpp-question/:id",
   testController.createSelectQuestion
 );
 router.post(
