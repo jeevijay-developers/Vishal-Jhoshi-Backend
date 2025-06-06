@@ -54,4 +54,24 @@ router.put("/dpp/publish-dpp/:id", async (req, res) => {
   }
 });
 
+router.get("/dpp/get-dpp", async (req, res) => {
+  try {
+    const dpp = await DPP.find({ publish: true });
+    return res.status(200).json(dpp);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/dpp/get-dpp-by-id/:id", async (req, res) => {
+  try {
+    const dpp = await DPP.findById(req.params.id);
+    if (!dpp) {
+      return res.status(404).json({ message: "DPP not found" });
+    }
+    return res.status(200).json(dpp);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;
