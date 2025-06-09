@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
   ],
   subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
   target: { type: String, required: true },
+  studentClass: { type: String, required: true },
   mentors: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   tests: [{ type: mongoose.Schema.Types.ObjectId, ref: "Test" }],
   seenBy: [{ type: String }], // Array of user IDs who have seen the message

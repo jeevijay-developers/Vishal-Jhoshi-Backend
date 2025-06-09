@@ -18,7 +18,7 @@ exports.signUpController = async (req, res) => {
     return res.json(badRequest([errors.array()]));
   }
 
-  const { email, password, name, target } = req.body;
+  const { email, password, name, target, studentClass } = req.body;
 
   // console.log(req.body);
 
@@ -43,6 +43,7 @@ exports.signUpController = async (req, res) => {
       location: "",
       bannerImage: "",
       image_url: "",
+      studentClass,
       birthDate: Date.now(),
     });
     const savedUser = await newUser.save();
