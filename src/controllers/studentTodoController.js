@@ -38,12 +38,14 @@ const updateSubtaskStatus = async (req, res) => {
 const getStudentTodos = async (req, res) => {
 
     try {
-        const studentId = "6830623333272c9f92020c6f"; // Hardcoded for now
+        const studentId = req.params.id; // Hardcoded for now
         const student = await User.findById(studentId);
         if (!student) return res.status(404).json({ message: "Student not found" });
 
         const studentName = student.name; // Assuming the field is 'name'
 
+
+        // find witin range
         const adminTodo = await AdminTodo.findOne();
         if (!adminTodo) return res.status(404).json({ message: "Admin Todo not found" });
 
@@ -61,6 +63,8 @@ const getStudentTodos = async (req, res) => {
             studentId: studentId,
             studentName: studentName,
             heading: adminTodo.heading,
+
+
             todos: adminTodo.todos.map(todo => ({
                 title: todo.title,
                 startDate: todo.startDate,
@@ -70,12 +74,12 @@ const getStudentTodos = async (req, res) => {
             createdBy: 'student',
         });
 
-        await newStudentTodo.save();
+        const savedNewTodo = await newStudentTodo.save();
 
         const relation = new Relationship({
             userId: studentId,
             adminTodoId: adminTodo._id,
-            studentTodoId: newStudentTodo._id,
+            studentTodoId: savedNewTodo._id,
         });
 
         await relation.save();
