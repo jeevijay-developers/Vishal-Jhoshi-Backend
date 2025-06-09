@@ -15,6 +15,7 @@ const {
   getMentorshipDetails,
   getAllMentorsAndStudents,
   getMyMentor,
+  getAllStudents
 } = require("../controllers/userController");
 const {
   updateUserInfo,
@@ -34,6 +35,7 @@ router.put("/me", updateProfile);
 
 router.get("/users/:userId", getOtherUserProfile);
 router.get("/mentors", getAllMentors);
+router.get("/all-students", getAllStudents);
 router.post("/create-mentorship/:userId", createMentorship);
 router.get("/get-mentorship/:userId", getMentorshipDetails);
 router.post("/create-new-mentor", createNewMentor);

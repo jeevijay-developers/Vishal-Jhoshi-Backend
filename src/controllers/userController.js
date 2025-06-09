@@ -415,3 +415,26 @@ exports.getMyMentor = async (req, res) => {
     });
   }
 };
+
+exports.getAllStudents = async (req, res) => {
+  try {
+    const users = await User.find();
+
+    if (!users) {
+      return res.status(404).json({
+        success: false,
+        errors: [{ message: "Users not found." }],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      users: users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      errors: [{ message: error.message || "Error in getAllStudents controller" }],
+    });
+  }
+}
