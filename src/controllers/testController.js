@@ -28,6 +28,7 @@ const MatchColumn = require("../models/matchColumnSchema");
 const AnswersSchema = require("../models/AnswersSchema");
 const TestLeaderboard = require("../models/TestLeaderboard");
 const cloudinary = require("../middleware/cloudinary");
+const DPP = require("../models/DPP");
 
 // const { created } = require("../helpers/responseHelper"); // Assuming you have a response helper
 
@@ -667,6 +668,198 @@ exports.createSelectQuestion = async (req, res) => {
     return res.status(200).json({
       message: "Question created and added to the test successfully",
       question,
+      test: updatedTest,
+    });
+  } catch (error) {
+    console.error("Error creating and linking the question:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.createSelectQuestionForDPP = async (req, res) => {
+  const { id } = req.params; // Test ID
+  console.log("ddp id ", id);
+
+  let imageA, imageB, imageC, imageD;
+  let descriptionImagePath = "";
+
+  let {
+    correctAnswer,
+    description,
+    descriptionImage,
+    imageOptionsA,
+    imageOptionsB,
+    imageOptionsC,
+    imageOptionsD,
+    level,
+    optionType,
+    subject,
+    subtopic,
+    textOptionsA,
+    textOptionsB,
+    textOptionsC,
+    textOptionsD,
+    topic,
+    type,
+    marks,
+  } = req.body;
+
+  try {
+    const test = await DPP.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: "DPP not found" });
+    }
+
+    const uploadToCloudinary = async (base64, label) => {
+      try {
+        const result = await cloudinary.uploader.upload(base64, {
+          folder: "select_question_options",
+          public_id: `${label}_${Date.now()}`,
+        });
+        return result.secure_url;
+      } catch (err) {
+        console.error(`Cloudinary upload failed for ${label}:`, err.message);
+        return "";
+      }
+    };
+
+    // Upload all images if present
+    if (descriptionImage) {
+      descriptionImagePath = await uploadToCloudinary(
+        descriptionImage,
+        "description"
+      );
+    }
+
+    if (imageOptionsA) {
+      imageA = await uploadToCloudinary(imageOptionsA, "optionA");
+    }
+
+    if (imageOptionsB) {
+      imageB = await uploadToCloudinary(imageOptionsB, "optionB");
+    }
+
+    if (imageOptionsC) {
+      imageC = await uploadToCloudinary(imageOptionsC, "optionC");
+    }
+
+    if (imageOptionsD) {
+      imageD = await uploadToCloudinary(imageOptionsD, "optionD");
+    }
+
+    const newQuestion = new SelectTypeQuestions({
+      correctAnswer,
+      description,
+      descriptionImage: descriptionImagePath,
+      imageOptionsA: imageA,
+      imageOptionsB: imageB,
+      imageOptionsC: imageC,
+      imageOptionsD: imageD,
+      textOptionsA,
+      textOptionsB,
+      textOptionsC,
+      textOptionsD,
+      level,
+      optionType,
+      subject,
+      subtopic,
+      topic,
+      type,
+      marks: Number(marks),
+    });
+
+    const question = await newQuestion.save();
+
+    test.questions.push({
+      questionId: question._id,
+      questionType: type,
+      subject,
+    });
+
+    const updatedTest = await test.save();
+
+    return res.status(200).json({
+      message: "Question created and added to the test successfully",
+      question,
+      test: updatedTest,
+    });
+  } catch (error) {
+    console.error("Error creating and linking the question:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.createintTestForDPP = async (req, res) => {
+  let descriptionImagePath = "";
+
+  try {
+    const { id } = req.params; // Test ID
+    const {
+      subject,
+      type,
+      description,
+      descriptionImage, // base64 string
+      correctAnswer,
+      marks,
+    } = req.body;
+
+    if (!subject || !type || !description || !correctAnswer || !marks) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const test = await DPP.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: "Test not found" });
+    }
+
+    // Handle description image via Cloudinary if it exists
+    if (descriptionImage) {
+      try {
+        const uploadResult = await cloudinary.uploader.upload(
+          descriptionImage,
+          {
+            folder: "test_questions",
+          }
+        );
+        descriptionImagePath = uploadResult.secure_url;
+      } catch (error) {
+        console.error("Cloudinary upload error:", error.message);
+        return res.status(500).json({
+          message: "Failed to upload image",
+          error: error.message,
+        });
+      }
+    }
+
+    // Create a new IntegerTypeQuestions object
+    const newQuestion = new IntegerTypeQuestions({
+      subject,
+      type,
+      description,
+      descriptionImage: descriptionImagePath,
+      correctAnswer: Number(correctAnswer),
+      marks: Number(marks),
+    });
+
+    const savedQuestion = await newQuestion.save();
+
+    test.questions.push({
+      questionId: savedQuestion._id,
+      questionType: type,
+      subject,
+    });
+
+    const updatedTest = await test.save();
+
+    return res.status(200).json({
+      message: "Question created and added to the test successfully",
+      question: savedQuestion,
       test: updatedTest,
     });
   } catch (error) {

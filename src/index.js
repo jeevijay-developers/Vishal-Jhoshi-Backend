@@ -16,6 +16,8 @@ const rolesRoutes = require("./routes/roles");
 const sessionRoutes = require("./routes/classSession");
 const adminTodoRoutes = require("./routes/adminTodoRoute");
 const studentTodoNewRoutes = require("./routes/studentTodoNewRoute");
+const dppRoutes = require("./routes/dppRoutes");
+const homeworkRoute = require("./routes/homeworkRoute");
 // Socket.IO imports
 const http = require("http");
 const { Server } = require("socket.io");
@@ -77,7 +79,9 @@ app.use(
   chatRoutes,
   testRoutes,
   rolesRoutes,
-  sessionRoutes
+  sessionRoutes,
+  dppRoutes,
+  homeworkRoute
 );
 app.use("/api/admin", adminTodoRoutes);
 // app.use("/api/student", studentTodoRoutes);

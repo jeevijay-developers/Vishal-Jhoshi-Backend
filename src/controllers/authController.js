@@ -18,7 +18,7 @@ exports.signUpController = async (req, res) => {
     return res.json(badRequest([errors.array()]));
   }
 
-  const { email, password, name, target } = req.body;
+  const { email, password, name, target, studentClass } = req.body;
 
   // console.log(req.body);
 
@@ -43,6 +43,7 @@ exports.signUpController = async (req, res) => {
       location: "",
       bannerImage: "",
       image_url: "",
+      studentClass,
       birthDate: Date.now(),
     });
     const savedUser = await newUser.save();
@@ -216,6 +217,19 @@ exports.createNewMentor = async (req, res) => {
 
     const savedUser = await user.save();
 
+    // fetch the admin to create room
+    const admin = await User.findOne({ role: "admin" });
+    //create new chatRoom
+    // create a ChatRoom
+    const chatRoom = new ChatRoom({
+      firstRoom: `${admin._id}_${savedUser._id}`,
+      secondRoom: `${savedUser._id}_${admin._id}`,
+      firstUser: admin._id,
+      secondUser: savedUser._id,
+    });
+
+    await chatRoom.save();
+
     res.status(201).json({
       message: "Mentor created successfully",
       mentor: savedUser,
@@ -268,41 +282,113 @@ exports.updateImageUrl = async (req, res) => {
   }
 };
 
+// exports.assignMentor = async (req, res) => {
+//   try {
+//     const { userId, mentorId } = req.params;
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.json(badRequest([{ message: "User not found." }]));
+//     }
+//     const mentor = await User.findById(mentorId).populate("mentorship");
+//     if (!mentor || !mentor.mentorship) {
+//       return res.json(badRequest([{ message: "Mentor not found." }]));
+//     }
+
+//     user.mentors = mentor._id;
+//     await user.save();
+
+//     // update mentorship
+//     const mentorship = await Mentorship.findById(mentor.mentorship);
+//     // if (!mentorship) {
+//     //   return res.json(badRequest([{ message: "Mentorship not found." }]));
+//     // }
+//     // push the student
+//     if (!mentorship.students.includes(user._id)) {
+//       mentorship.students.push(user._id);
+//       mentorship.menteesCount += 1;
+//     }
+//     // mentorship.students.push(user._id);
+//     // mentorship.menteesCount = mentorship.menteesCount + 1;
+//     // check if chat room exists
+//     const isRoomExists = await ChatRoom.findOne({
+//       $or: [
+//         { firstRoom: `${userId}_${mentorId}` },
+//         { secondRoom: `${mentorId}_${userId}` },
+//       ],
+//     });
+
+//     if (!isRoomExists) {
+//       const chatRoom = new ChatRoom({
+//         firstRoom: `${userId}_${mentorId}`,
+//         secondRoom: `${mentorId}_${userId}`,
+//         firstUser: userId,
+//         secondUser: mentorId,
+//       });
+
+//       await chatRoom.save();
+//     }
+//     await mentorship.save();
+
+//     return res.json(success({ message: "Mentor assigned successfully" }));
+//   } catch (error) {
+//     res.json(internalServerError([error.message || error]));
+//   }
+// };
+
 exports.assignMentor = async (req, res) => {
   try {
     const { userId, mentorId } = req.params;
+
     const user = await User.findById(userId);
     if (!user) {
-      return res.json(badRequest([{ message: "User not found." }]));
+      return res.status(400).json(badRequest([{ message: "User not found." }]));
     }
+
     const mentor = await User.findById(mentorId).populate("mentorship");
     if (!mentor) {
-      return res.json(badRequest([{ message: "Mentor not found." }]));
+      return res
+        .status(400)
+        .json(badRequest([{ message: "Mentor not found." }]));
     }
 
+    if (!mentor.mentorship) {
+      return res
+        .status(400)
+        .json(badRequest([{ message: "Mentorship not found for mentor." }]));
+    }
+
+    // Assign mentor to user (single mentor assumed)
     user.mentors = mentor._id;
-    await user.save();
 
-    // update mentorship
-    const mentorship = await Mentorship.findById(mentor.mentorship);
-    if (!mentorship) {
-      return res.json(badRequest([{ message: "Mentorship not found." }]));
+    const mentorship = mentor.mentorship;
+
+    // Add student if not already present
+    if (!mentorship.students.includes(user._id)) {
+      mentorship.students.push(user._id);
+      mentorship.menteesCount += 1;
     }
-    // push the student
-    mentorship.students.push(user._id);
-    mentorship.menteesCount = mentorship.menteesCount + 1;
-    const chatRoom = new ChatRoom({
-      firstRoom: `${userId}_${mentorId}`,
-      secondRoom: `${mentorId}_${userId}`,
-      firstUser: userId,
-      secondUser: mentorId,
+
+    // Check or create chat room
+    const isRoomExists = await ChatRoom.findOne({
+      $or: [
+        { firstRoom: `${userId}_${mentorId}` },
+        { secondRoom: `${mentorId}_${userId}` },
+      ],
     });
 
-    await chatRoom.save();
-    await mentorship.save();
+    if (!isRoomExists) {
+      await ChatRoom.create({
+        firstRoom: `${userId}_${mentorId}`,
+        secondRoom: `${mentorId}_${userId}`,
+        firstUser: userId,
+        secondUser: mentorId,
+      });
+    }
+
+    await Promise.all([user.save(), mentorship.save()]);
 
     return res.json(success({ message: "Mentor assigned successfully" }));
   } catch (error) {
-    res.json(internalServerError([error.message || error]));
+    return res.status(500).json(internalServerError([error.message || error]));
   }
 };
