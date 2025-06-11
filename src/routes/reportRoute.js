@@ -48,5 +48,39 @@ router.post("/report-mentor", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+router.get("/report-mentor", async (req, res) => {
+  try {
+    const reports = await ReportMentor.find().populate("mentorId");
 
+    const mentorMap = new Map();
+
+    reports.forEach((rep) => {
+      const mentorId = rep.mentorId._id.toString();
+
+      if (mentorMap.has(mentorId)) {
+        mentorMap.get(mentorId).count += 1;
+      } else {
+        mentorMap.set(mentorId, {
+          mentor: rep.mentorId,
+          count: 1,
+        });
+      }
+    });
+
+    // Convert the map to an array to return as JSON
+    const data = Array.from(mentorMap.values());
+    return res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/get-report-mentor/:id", async (req, res) => {
+  try {
+    const reports = await ReportMentor.find({ mentorId: req.params.id });
+    return res.status(200).json(reports);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = router;
